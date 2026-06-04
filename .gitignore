@@ -1,0 +1,9 @@
+*.o
+*.elf
+*.bin
+*.map
+kernel
+a.out
+node_modules/
+.DS_Store
+Thumbs.db
