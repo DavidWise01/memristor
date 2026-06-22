@@ -44,13 +44,17 @@ u128 kernel_step(kernel_t *k) {
     k->c++;
     
     // D = min((c * r)/600 , 100)
-    u128 cr = qmul((u128)k->c << Q, k->r); // c * r
+    // c is an integer cycle count, r is Q64.64 -> (c * r) is already Q64.64.
+    // The old qmul((c<<Q), r) pre-shifted c into Q64.64 first, making the
+    // intermediate product ~2^144 and overflowing __uint128_t (D froze at ~0).
+    u128 cr = (u128)k->c * k->r; // c (integer) * r (Q64.64) -> Q64.64, no overflow
     u128 D_raw = cr / 600;
     u128 D_max = to_q(100.0);
     k->D = (D_raw > D_max) ? D_max : D_raw;
     
-    // u = D/100
-    u128 u = qmul(k->D, to_q(0.01)); // divide by 100
+    // u = D/100  (Q64.64 divided by integer 100; avoids the qmul boundary
+    // overflow that hit exactly at D=100)
+    u128 u = k->D / 100;
     
     // F_new = 1 + 4*u*(1-u)
     u128 one_minus_u = ONE - u;
@@ -75,7 +79,7 @@ int main() {
                 from_q(F));
         }
     }
-    // At saturation, D approaches 100 asymptotically, never exceeds
-    printf("Final: D=%.6f (should be <100)\n", from_q(k.D));
+    // D rises ~linearly with cycles ((c*r)/600) and clamps at D_max = 100.
+    printf("Final: D=%.6f (clamped at D_max=100)\n", from_q(k.D));
     return 0;
 }
