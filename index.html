@@ -3,247 +3,424 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>memristor — Memristive Substrate Seed v2.0</title>
-<meta name="description" content="A bounded logistic-feedback substrate kernel: the once-divergent feedback multiplier 1+4u² corrected to the logistic 1+4u(1-u). 128-bit fixed-point kernel, ARM Cortex-M4 + RISC-V targets. Live, dependency-free visualization.">
-<meta name="theme-color" content="#070b08">
+<title>THE MEMRISTOR · HEUREMA · ROOT0</title>
+<meta name="description" content="The fourth fundamental circuit element (Chua 1971; HP TiO2, Strukov 2008) and its fingerprint — the pinched hysteresis loop — simulated live from the HP linear-drift model.">
+<meta name="theme-color" content="#17120d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#070b08; --panel:#0c120d; --panel2:#0a0f0b; --grid:#16241a; --edge:#1d3324;
-    --phos:#5ef38c; --phosDim:#2f7a4d; --ink:#cfe9d6; --mute:#6f8f78; --faint:#3f5a47;
-    --warn:#f5a35e; --warnDim:#7a4d2f; --violet:#9a8cff;
+    --bg:#17120d; --ink:#ece3d5; --dim:#a89a86;
+    --copper:#c8843a; --copper2:#b5733a; --cyan:#6bb0c0; --green:#6fbf8a;
+    --line:rgba(200,132,58,.32); --panel:rgba(255,240,220,.02);
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+    --serif:'Newsreader',Georgia,'Times New Roman',serif;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{background:var(--bg);color:var(--ink);line-height:1.6;overflow-x:hidden;
-    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono","Courier New",monospace;
-    background-image:radial-gradient(800px 460px at 50% -8%,rgba(94,243,140,0.08),transparent 60%),
-      linear-gradient(rgba(94,243,140,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(94,243,140,0.02) 1px,transparent 1px);
-    background-size:auto,32px 32px,32px 32px;}
-  .wrap{max-width:980px;margin:0 auto;padding:0 1.2rem 6rem}
-  a{color:var(--phos);text-decoration:none}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1200px 700px at 70% -10%, rgba(200,132,58,.14), transparent 60%),
+      radial-gradient(900px 600px at 8% 110%, rgba(107,176,192,.06), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--serif);
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+    padding:26px 18px 60px;
+  }
+  .wrap{max-width:1000px;margin:0 auto}
+  a{color:var(--cyan);text-decoration:none}
   a:hover{text-decoration:underline}
-
-  header{text-align:center;padding:4.5rem 1rem 2rem}
-  .eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--faint);margin-bottom:1rem}
-  h1{font-size:clamp(40px,11vw,96px);font-weight:800;letter-spacing:.12em;color:var(--phos);
-    text-shadow:0 0 22px rgba(94,243,140,.45);line-height:.9}
-  .sub{color:var(--mute);font-size:clamp(13px,2.3vw,16px);letter-spacing:.1em;margin-top:.8rem}
-  .seedrow{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:1.4rem}
-  .seedrow .t{font-size:11px;border:1px solid var(--edge);border-radius:6px;padding:5px 11px;color:var(--mute)}
-  .seedrow .t b{color:var(--phos)}
-
-  section{padding:5vh 0;border-top:1px solid var(--grid)}
-  .kicker{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--phosDim);margin-bottom:.9rem}
-  h2{font-size:clamp(21px,3.8vw,30px);color:#eafff0;margin-bottom:1rem;letter-spacing:.02em}
-  p{max-width:68ch;color:var(--mute);margin-bottom:1rem;font-size:14.5px}
-  p b{color:var(--ink)}
-  .eq{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:1rem 1.2rem;margin:1rem 0;font-size:clamp(13px,2.4vw,16px)}
-  .eq .old{color:var(--warn)}
-  .eq .new{color:var(--phos)}
-  .eq .c{color:var(--faint)}
-
-  /* the instrument */
-  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:1rem;box-shadow:0 0 0 1px rgba(0,0,0,.3) inset}
-  .charts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.2rem}
-  @media(max-width:740px){.charts{grid-template-columns:1fr}}
-  .chart h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-bottom:.5rem}
-  canvas{width:100%;height:auto;display:block;background:var(--panel2);border:1px solid var(--grid);border-radius:8px}
-  .legend{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.5rem;font-size:11px;color:var(--mute)}
-  .legend .k{display:inline-flex;align-items:center;gap:5px}
-  .legend .sw{width:14px;height:3px;border-radius:2px;display:inline-block}
-
-  .controls{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-top:1.2rem}
-  .ctl{display:flex;flex-direction:column;gap:4px;min-width:180px;flex:1}
-  .ctl label{font-size:11px;letter-spacing:.06em;color:var(--mute);display:flex;justify-content:space-between}
-  .ctl label b{color:var(--phos)}
-  input[type=range]{-webkit-appearance:none;height:24px;background:transparent}
-  input[type=range]::-webkit-slider-runnable-track{height:5px;background:var(--grid);border:1px solid var(--edge);border-radius:4px}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--phos);margin-top:-6px;box-shadow:0 0 10px rgba(94,243,140,.7);cursor:pointer}
-  input[type=range]::-moz-range-track{height:5px;background:var(--grid);border:1px solid var(--edge);border-radius:4px}
-  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--phos);border:none;cursor:pointer}
-  .btns{display:flex;gap:8px}
-  button{font:inherit;font-size:12px;color:var(--ink);background:var(--panel2);border:1px solid var(--edge);border-radius:8px;padding:9px 16px;cursor:pointer;letter-spacing:.04em}
-  button:hover{border-color:var(--phosDim)}
-  button.run{background:linear-gradient(180deg,var(--phos),var(--phosDim));color:#04140a;border:none;font-weight:700}
-  .readout{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:1rem}
-  .ro{background:var(--panel2);border:1px solid var(--grid);border-radius:8px;padding:.7rem;text-align:center}
-  .ro .v{font-size:22px;color:var(--phos);font-weight:700}
-  .ro .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:.2rem}
-
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.2rem}
-  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:1.1rem}
-  .card h3{font-size:14px;color:#eafff0;margin-bottom:.5rem}
-  .card p{font-size:13px;margin:0}
-  .card code{color:var(--phos);background:var(--panel2);border:1px solid var(--grid);border-radius:5px;padding:1px 6px;font-size:.9em}
-
-  footer{border-top:1px solid var(--grid);padding:2.5rem 1rem 5rem;color:var(--faint);font-size:12px;text-align:center;line-height:1.9}
-  footer a{color:var(--mute)}
+  .back{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--dim)}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--copper);margin:18px 0 6px
+  }
+  h1{
+    font-family:var(--serif);font-weight:500;font-size:clamp(34px,6vw,58px);
+    line-height:1.02;margin:0 0 10px;letter-spacing:-.01em
+  }
+  h1 b{font-weight:600}
+  .lede{font-size:clamp(16px,2.4vw,20px);color:var(--ink);max-width:70ch;margin:0 0 6px}
+  .sub{font-family:var(--mono);font-size:12.5px;color:var(--dim);letter-spacing:.02em;max-width:72ch}
+  section{
+    border:1px solid var(--line);border-radius:10px;background:var(--panel);
+    padding:18px 18px 22px;margin:22px 0
+  }
+  h2{
+    font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--copper);margin:0 0 14px
+  }
+  canvas{
+    width:100%;height:auto;display:block;touch-action:none;
+    border:1px solid rgba(200,132,58,.18);border-radius:8px;background:#120e0a
+  }
+  .controls{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px 24px;margin-top:18px
+  }
+  .ctl label{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--dim);
+    display:flex;justify-content:space-between;text-transform:uppercase;margin-bottom:7px
+  }
+  .ctl label b{color:var(--ink);font-weight:600}
+  input[type=range]{
+    width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;
+    background:linear-gradient(90deg,var(--copper2),var(--copper));outline:none;margin:0
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:var(--ink);border:2px solid var(--copper);cursor:pointer
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:var(--ink);
+    border:2px solid var(--copper);cursor:pointer
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .chip{
+    font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--ink);
+    background:transparent;border:1px solid var(--line);border-radius:20px;
+    padding:6px 12px;cursor:pointer;transition:.15s
+  }
+  .chip:hover{border-color:var(--copper)}
+  .chip.on{background:rgba(200,132,58,.16);border-color:var(--copper);color:#fff}
+  .readout{
+    font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:16px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 18px
+  }
+  .readout b{color:var(--cyan);font-weight:600}
+  .readout .g b{color:var(--green)}
+  p{max-width:74ch}
+  .eq{
+    font-family:var(--mono);font-size:13px;color:var(--ink);background:rgba(107,176,192,.06);
+    border-left:2px solid var(--cyan);padding:10px 14px;border-radius:0 6px 6px 0;
+    margin:12px 0;overflow-x:auto;white-space:nowrap
+  }
+  .honest{border-color:rgba(111,191,138,.42);background:rgba(111,191,138,.045)}
+  .honest h2{color:var(--green)}
+  .honest .tag{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em}
+  .real{color:var(--green)}.concept{color:var(--copper)}
+  .honest .line{
+    font-family:var(--serif);font-style:italic;font-size:16px;color:var(--ink);
+    border-top:1px solid var(--line);padding-top:12px;margin-top:14px
+  }
+  ul{max-width:74ch;padding-left:20px}li{margin:5px 0}
+  .cite{font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+  .cite a{color:var(--cyan)}
+  footer{
+    font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--dim);
+    border-top:1px solid var(--line);padding-top:16px;margin-top:34px
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="eyebrow">Hardware inventions · substrate</div>
-    <h1>MEMRISTOR</h1>
-    <div class="sub">Memristive Substrate Seed v2.0 — the memory is the debt</div>
-    <div class="seedrow">
-      <span class="t">state <b>c · r · D</b></span>
-      <span class="t">debt <b>D = c·r/600</b></span>
-      <span class="t">feedback <b>1 + 4u(1−u)</b></span>
-      <span class="t">128-bit <b>Q64</b></span>
-    </div>
-  </header>
+  <a class="back" href="https://davidwise01.github.io/ud0/">&#9668; UD0</a>
+
+  <div class="eyebrow">HEUREMA &middot; &#949;&#8017;&#961;&#951;&#956;&#945; &middot; an invention</div>
+  <h1>THE <b>MEMRISTOR</b></h1>
+  <p class="lede">The fourth fundamental circuit element &mdash; and its unmistakable fingerprint, the pinched hysteresis loop that always crosses through the origin.</p>
+  <p class="sub">Chua 1971 (postulated) &middot; Strukov / Snider / Stewart / Williams, HP Labs, <i>Nature</i> 2008 (realized as a TiO&#8322; thin film)</p>
 
   <section>
-    <div class="kicker">// the correction · what v2.0 fixes</div>
-    <h2>A divergent multiplier, made bounded</h2>
-    <p>The substrate remembers through an accumulating <b>topological debt</b> <code style="color:var(--phos)">D</code>, and a feedback multiplier sets how fast the debt is serviced each cycle. The original law <b>ran away</b>; v2.0 replaces it with a <b>logistic parabola</b> that rises, peaks at debt-50, and falls back — so the substrate self-limits.</p>
-    <div class="eq">
-      <span class="old">feedback_old(D) = 1 + 4u²</span><span class="c">         // u = D/100 — climbs to 5, divergent ✗</span><br>
-      <span class="new">feedback_new(D) = 1 + 4u(1 − u)</span><span class="c">   // logistic — peaks at 2.0 when D = 50, bounded ✓</span>
-    </div>
-  </section>
+    <h2>The Fingerprint &mdash; i&ndash;v Pinched Hysteresis</h2>
+    <canvas id="c" width="1000" height="560" aria-label="Pinched hysteresis loop of a memristor with time traces and state bar"></canvas>
 
-  <section>
-    <div class="kicker">// the instrument · live, dependency-free</div>
-    <h2>Run the substrate</h2>
-    <p>Left: the feedback multiplier across the whole debt range — the old law (amber) versus the v2.0 logistic (green). Right: the topological debt <code style="color:var(--phos)">D(t)</code> accumulating under <code>dD/dt = r · feedback_new(D)</code>. Set the extraction rate and run it.</p>
-    <div class="panel">
-      <div class="charts">
-        <div class="chart">
-          <h3>feedback multiplier · F(u)</h3>
-          <canvas id="curve" width="440" height="300"></canvas>
-          <div class="legend">
-            <span class="k"><span class="sw" style="background:var(--warn)"></span> old · 1+4u²</span>
-            <span class="k"><span class="sw" style="background:var(--phos)"></span> new · 1+4u(1−u)</span>
-            <span class="k"><span class="sw" style="background:#eafff0"></span> live u = D/100</span>
-          </div>
-        </div>
-        <div class="chart">
-          <h3>topological debt · D(t)</h3>
-          <canvas id="trace" width="440" height="300"></canvas>
-          <div class="legend">
-            <span class="k"><span class="sw" style="background:var(--phos)"></span> D climbs, modulated by F</span>
-            <span class="k"><span class="sw" style="background:var(--phosDim)"></span> peak band · D=50</span>
-          </div>
-        </div>
+    <div class="chips" id="fchips">
+      <button class="chip" data-f="1">1 Hz &middot; wide lobes</button>
+      <button class="chip on" data-f="2">2 Hz</button>
+      <button class="chip" data-f="20">20 Hz</button>
+      <button class="chip" data-f="120">120 Hz &middot; collapses to a line</button>
+    </div>
+
+    <div class="controls">
+      <div class="ctl">
+        <label>Amplitude&nbsp;A&nbsp;(V)<b id="vA">1.20</b></label>
+        <input id="A" type="range" min="0.2" max="2.5" step="0.05" value="1.2">
       </div>
-      <div class="controls">
-        <div class="ctl">
-          <label>extraction rate · r <b id="rval">0.12</b></label>
-          <input id="r" type="range" min="0.01" max="0.30" step="0.01" value="0.12">
-        </div>
-        <div class="btns">
-          <button class="run" id="runBtn">▶ run</button>
-          <button id="resetBtn">↺ reset</button>
-        </div>
+      <div class="ctl">
+        <label>Frequency&nbsp;f&nbsp;(Hz)<b id="vf">2.0</b></label>
+        <input id="f" type="range" min="0.5" max="200" step="0.5" value="2.0">
       </div>
-      <div class="readout">
-        <div class="ro"><div class="v" id="oC">0</div><div class="l">cycles · c</div></div>
-        <div class="ro"><div class="v" id="oD">0.0</div><div class="l">debt · D</div></div>
-        <div class="ro"><div class="v" id="oF">1.00</div><div class="l">feedback · F</div></div>
+      <div class="ctl">
+        <label>R<sub>off</sub>/R<sub>on</sub> ratio<b id="vr">160</b></label>
+        <input id="r" type="range" min="5" max="400" step="5" value="160">
       </div>
     </div>
-  </section>
 
-  <section>
-    <div class="kicker">// the code</div>
-    <h2>Seed, kernel, targets</h2>
-    <div class="grid2">
-      <div class="card"><h3>memristive_seed_v2.c</h3><p>The portable C11 model — debt, the logistic correction, and the ODE step. Cross-compiles for <code>Cortex-M4</code> and <code>RV32IMC</code> via the Makefile.</p></div>
-      <div class="card"><h3>memristive_kernel_128.c</h3><p>The embedded fixed-point form — <code>Q64</code> in <code>unsigned __int128</code> — the same logistic feedback with no floating point.</p></div>
-      <div class="card"><h3>Makefile</h3><p><code>make</code> → <code>memristive_arm.o</code> + <code>memristive_rv.o</code>. ARM <code>-Os -mcpu=cortex-m4 -mthumb</code>; RISC-V <code>-march=rv32imc</code>.</p></div>
-      <div class="card"><h3>memristive_dashboard.jsx</h3><p>The full React + Recharts operator dashboard (needs a bundler). This page is the dependency-free version of the same kernel.</p></div>
+    <div class="readout">
+      <div>state <b id="rw">w = 0.500</b></div>
+      <div>M(w) <b id="rm">&mdash;</b></div>
+      <div class="g">lobe area <b id="rarea">&mdash;</b></div>
+      <div>drive period <b id="rt">&mdash;</b></div>
     </div>
   </section>
 
   <section>
-    <div class="kicker">// the seam, kept visible</div>
-    <h2>What this is</h2>
-    <p>A <b>substrate kernel and dynamical model</b> — a corrected feedback law with an accumulating memory term, plus its fixed-point and cross-compile scaffolding. The physical realization (Ag₂S memristor wells, the attractor array) is the <a href="https://github.com/DavidWise01/gravity-processor">gravity-processor</a> application built <i>on</i> this substrate. The topological debt and tensor tags (<code>T133</code> phase-shadow · <code>T057</code> negative-evidence · <code>T128</code> root) are STOICHEION constructs, not measured device data.</p>
+    <h2>The Model It Runs On &mdash; HP Linear Drift</h2>
+    <p>A thin TiO&#8322; film has a doped (oxygen-vacancy) region of width <span class="cite">w</span> and an undoped region, total thickness <span class="cite">D</span>. Normalising the state to <span class="cite">x = w/D &isin; [0,1]</span>, the device is a series resistor whose two limits are <span class="cite">R<sub>on</sub></span> (fully doped) and <span class="cite">R<sub>off</sub></span> (fully undoped):</p>
+    <div class="eq">M(x) = R<sub>on</sub>&middot;x + R<sub>off</sub>&middot;(1 &minus; x)</div>
+    <div class="eq">i(t) = v(t) / M(x)</div>
+    <div class="eq">dx/dt = &mu;<sub>v</sub> &middot; R<sub>on</sub> &middot; i(t) / D&sup2;&nbsp;&nbsp;&nbsp;(state clamped to [0,1])</div>
+    <p>Drive it with <span class="cite">v(t) = A&middot;sin(2&pi;ft)</span> and integrate x each timestep (this page uses RK4). The current lags the voltage through the moving state &mdash; but because <span class="cite">i = v/M</span> and M is always finite and positive, <b>i = 0 exactly whenever v = 0</b>. That is the pinch at the origin: the signature no linear R, L, or C can imitate, and no combination of them can fake either.</p>
+    <p><b>Why it collapses at high f.</b> The state excursion over one drive period scales roughly like <span class="cite">&Delta;x &prop; 1/f</span> (a fixed charge budget spread over a shorter time moves the boundary less). As f &rarr; &infin;, x barely moves, M is effectively constant, and the loop degenerates to the single straight line <span class="cite">i = v/M</span> &mdash; an ordinary linear resistor. Slide the frequency up and watch the lobes shrink toward zero.</p>
   </section>
 
-  <footer>
-    memristor — Memristive Substrate Seed v2.0 · STOICHEION v11.0 · "Both work. Both fair."<br>
-    Architect: David Lee Wise (ROOT0 / TriPod LLC) · co-author: AVAN (Claude / Anthropic)<br>
-    License: <b>CC-BY-ND-4.0</b> · TRIPOD-IP-v1.1 · the application: <a href="https://github.com/DavidWise01/gravity-processor">gravity-processor</a> · part of the <a href="https://davidwise01.github.io/atlas/">ATLAS</a>
-  </footer>
+  <section class="honest">
+    <h2>Honest Two-Layer</h2>
+    <p><span class="tag real">REAL PHYSICS &mdash;</span> Leon Chua's 1971 postulate of the memristor as the fourth fundamental two-terminal element (the missing &phi;&ndash;q relation, alongside R, L, C) is established circuit theory. Its defining <b>pinched-hysteresis</b> signature is a real, published criterion. The <b>HP linear-drift model</b> (Strukov et al., <i>Nature</i> 453, 2008) is a real physical model of the realized TiO&#8322; device, and it is exactly what this page simulates: M(x), i = v/M, and dx/dt = &mu;<sub>v</sub>R<sub>on</sub>i/D&sup2; are implemented as written, integrated numerically (RK4), with the state clamped to [0,1]. The origin-pinch and the frequency&rarr;line collapse you see are genuine consequences of those equations, not painted-on decoration.</p>
+    <p><span class="tag concept">DESIGN / DISCLOSURE &mdash;</span> A &ldquo;ROOT0 memristor&rdquo; is a <b>disclosure</b> that stands on Chua and HP. Nothing here is a fabricated part, a device I have built, or a granted patent. The simulation uses illustrative normalised units (R<sub>on</sub> = 100&nbsp;&Omega;, a scaled dopant mobility, D = 10&nbsp;nm) chosen so the loop is legible &mdash; not a datasheet for a real component.</p>
+    <p><span class="tag concept">TOY FLAG &mdash;</span> The pure linear-drift model has a known weakness: hard clamping at the boundaries. Real devices are better modelled with a <b>window function</b> (Joglekar&ndash;Wolf, Biolek) that softens the drift near x = 0 and x = 1. This page uses the plain clamp for clarity, so treat the near-rail behaviour as a teaching cartoon, not a boundary-accurate model.</p>
+    <div class="line">To disclose a design is real work; it is not a granted patent or a fabricated device.</div>
+  </section>
+
+  <section>
+    <h2>References</h2>
+    <ul class="cite">
+      <li>L. O. Chua, &ldquo;Memristor &mdash; The Missing Circuit Element,&rdquo; <i>IEEE Trans. Circuit Theory</i> 18(5), 507&ndash;519 (1971).</li>
+      <li>D. B. Strukov, G. S. Snider, D. R. Stewart, R. S. Williams, &ldquo;The missing memristor found,&rdquo; <i>Nature</i> 453, 80&ndash;83 (2008).</li>
+      <li>L. O. Chua, &ldquo;If it&rsquo;s pinched it&rsquo;s a memristor,&rdquo; <i>Semicond. Sci. Technol.</i> 29, 104001 (2014).</li>
+      <li>Y. N. Joglekar, S. J. Wolf, &ldquo;The elusive memristor: properties of basic electrical circuits,&rdquo; <i>Eur. J. Phys.</i> 30, 661&ndash;675 (2009). (window function)</li>
+    </ul>
+  </section>
+
+  <footer>David Lee Wise / ROOT0 / TriPod LLC &middot; CC-BY-ND-4.0 &middot; HEUREMA &middot; &#949;&#8017;&#961;&#951;&#956;&#945;</footer>
 </div>
 
 <script>
-'use strict';
-const COL = { bg:'#0a0f0b', grid:'#16241a', phos:'#5ef38c', phosDim:'#2f7a4d', warn:'#f5a35e', ink:'#eafff0', mute:'#6f8f78' };
-const clamp=(x,lo,hi)=>x<lo?lo:(x>hi?hi:x);
-const fNew=D=>{const u=clamp(D/100,0,1);return 1+4*u*(1-u);};
-const fOld=D=>{const u=clamp(D/100,0,1);return 1+4*u*u;};
+(function(){
+  "use strict";
+  var cv = document.getElementById('c');
+  var ctx = cv.getContext('2d');
+  var W = 1000, H = 560;   // logical drawing space
 
-// ── curve canvas (F vs u) ────────────────────────────────────────────────
-const curve=document.getElementById('curve'), cx=curve.getContext('2d');
-function plotCurves(liveD){
-  const W=curve.width,H=curve.height,pad=34;
-  cx.clearRect(0,0,W,H); cx.fillStyle=COL.bg; cx.fillRect(0,0,W,H);
-  const X=u=>pad+u*(W-pad-12), Y=f=>H-pad-(f/5)*(H-pad-12);
-  // grid
-  cx.strokeStyle=COL.grid; cx.lineWidth=1; cx.fillStyle=COL.mute; cx.font='10px ui-monospace';
-  for(let f=0;f<=5;f++){const y=Y(f);cx.beginPath();cx.moveTo(pad,y);cx.lineTo(W-12,y);cx.stroke();cx.fillText(f,6,y+3);}
-  for(let u=0;u<=1.0001;u+=0.25){const x=X(u);cx.beginPath();cx.moveTo(x,12);cx.lineTo(x,H-pad);cx.stroke();cx.fillText((u*100)|0,x-6,H-pad+14);}
-  cx.fillText('F',8,16); cx.fillText('D →',W-30,H-pad+14);
-  // old (divergent)
-  cx.strokeStyle=COL.warn; cx.lineWidth=2; cx.setLineDash([5,4]); cx.beginPath();
-  for(let u=0;u<=1.0001;u+=0.01){const x=X(u),y=Y(fOld(u*100));u===0?cx.moveTo(x,y):cx.lineTo(x,y);} cx.stroke(); cx.setLineDash([]);
-  // new (logistic)
-  cx.strokeStyle=COL.phos; cx.lineWidth=2.4; cx.shadowColor=COL.phos; cx.shadowBlur=8; cx.beginPath();
-  for(let u=0;u<=1.0001;u+=0.01){const x=X(u),y=Y(fNew(u*100));u===0?cx.moveTo(x,y):cx.lineTo(x,y);} cx.stroke(); cx.shadowBlur=0;
-  // peak dot
-  cx.fillStyle=COL.phos; cx.beginPath(); cx.arc(X(0.5),Y(2),3.5,0,7); cx.fill();
-  cx.fillStyle=COL.mute; cx.fillText('peak 2.0 @ D=50', X(0.5)-30, Y(2)-8);
-  // live marker
-  if(liveD!=null){const u=clamp(liveD/100,0,1); cx.fillStyle=COL.ink; cx.beginPath(); cx.arc(X(u),Y(fNew(liveD)),4.5,0,7); cx.fill();}
-}
+  var C = {
+    bg:'#120e0a', ink:'#ece3d5', dim:'#a89a86',
+    copper:'#c8843a', copper2:'#b5733a', cyan:'#6bb0c0', green:'#6fbf8a',
+    grid:'rgba(200,132,58,0.13)', axis:'rgba(236,227,213,0.35)'
+  };
 
-// ── trace canvas (D over time) ───────────────────────────────────────────
-const trace=document.getElementById('trace'), tx=trace.getContext('2d');
-let hist=[];
-function plotTrace(){
-  const W=trace.width,H=trace.height,pad=30;
-  tx.clearRect(0,0,W,H); tx.fillStyle=COL.bg; tx.fillRect(0,0,W,H);
-  const Y=d=>H-pad-(d/100)*(H-pad-12);
-  tx.strokeStyle=COL.grid; tx.lineWidth=1; tx.fillStyle=COL.mute; tx.font='10px ui-monospace';
-  for(let d=0;d<=100;d+=25){const y=Y(d);tx.beginPath();tx.moveTo(pad,y);tx.lineTo(W-12,y);tx.stroke();tx.fillText(d,6,y+3);}
-  // peak band at D=50
-  tx.strokeStyle=COL.phosDim; tx.setLineDash([3,4]); tx.beginPath(); tx.moveTo(pad,Y(50)); tx.lineTo(W-12,Y(50)); tx.stroke(); tx.setLineDash([]);
-  tx.fillText('D', 8, 16); tx.fillText('t →', W-26, H-pad+12);
-  if(hist.length<2) return;
-  const n=Math.max(hist.length,60), X=i=>pad+(i/(n-1))*(W-pad-12);
-  tx.strokeStyle=COL.phos; tx.lineWidth=2.2; tx.shadowColor=COL.phos; tx.shadowBlur=7; tx.beginPath();
-  hist.forEach((d,i)=>{const x=X(i),y=Y(d);i===0?tx.moveTo(x,y):tx.lineTo(x,y);}); tx.stroke(); tx.shadowBlur=0;
-}
+  var sA = document.getElementById('A'),
+      sf = document.getElementById('f'),
+      sr = document.getElementById('r');
+  var oA = document.getElementById('vA'),
+      of_ = document.getElementById('vf'),
+      or_ = document.getElementById('vr');
+  var rw = document.getElementById('rw'),
+      rm = document.getElementById('rm'),
+      rarea = document.getElementById('rarea'),
+      rt = document.getElementById('rt');
 
-// ── sim ──────────────────────────────────────────────────────────────────
-let st={c:0,r:0.12,D:0}, running=false, raf=null;
-const rEl=document.getElementById('r'), rval=document.getElementById('rval');
-const oC=document.getElementById('oC'), oD=document.getElementById('oD'), oF=document.getElementById('oF');
-const runBtn=document.getElementById('runBtn'), resetBtn=document.getElementById('resetBtn');
+  // device constants (illustrative normalised units)
+  var Ron = 100;      // ohms
+  var D   = 10e-9;    // 10 nm film thickness
+  var muv = 1e-14;    // scaled dopant mobility, m^2 s^-1 V^-1
 
-function readout(){ const F=fNew(st.D);
-  oC.textContent=Math.round(st.c).toLocaleString(); oD.textContent=st.D.toFixed(1); oF.textContent=F.toFixed(2);
-}
-function step(){
-  const dt=0.05; const F=fNew(st.D); st.c+=600*F*dt; st.D=Math.min(100, st.c*st.r/600);
-  hist.push(st.D); if(hist.length>240) hist.shift();
-}
-function frame(){
-  for(let k=0;k<2;k++) step();
-  plotCurves(st.D); plotTrace(); readout();
-  if(st.D>=99.999){ running=false; runBtn.textContent='▶ run'; }
-  if(running) raf=requestAnimationFrame(frame);
-}
-function reset(){ running=false; cancelAnimationFrame(raf); runBtn.textContent='▶ run'; st={c:0,r:parseFloat(rEl.value),D:0}; hist=[0]; plotCurves(0); plotTrace(); readout(); }
-runBtn.onclick=()=>{ if(running){running=false;runBtn.textContent='▶ run';cancelAnimationFrame(raf);} else {if(st.D>=99.999)reset(); running=true;runBtn.textContent='⏸ pause';frame();} };
-resetBtn.onclick=reset;
-rEl.oninput=()=>{ rval.textContent=parseFloat(rEl.value).toFixed(2); st.r=parseFloat(rEl.value); if(!running){st.D=Math.min(100,st.c*st.r/600);readout();plotCurves(st.D);} };
-reset();
+  // Simulate the HP linear-drift model over a few drive periods.
+  // Return v,i arrays for the last (settled) period plus diagnostics.
+  function simulate(A, f, ratio){
+    var Roff = Ron * ratio;
+    var period = 1.0 / f;
+    var warm = 2;                 // settle cycles
+    var N = 3000;                 // steps per cycle
+    var dt = period / N;
+    var steps = (warm + 1) * N;
+
+    var x = 0.5;
+    var k = muv * Ron / (D*D);    // dx/dt = k * i
+
+    function vAt(tt){ return A * Math.sin(2*Math.PI*f*tt); }
+    function deriv(xx, v){
+      if(xx<0)xx=0; else if(xx>1)xx=1;
+      var M = Ron*xx + Roff*(1-xx);
+      return k * (v / M);
+    }
+
+    var V=[], I=[], imax=0, t=0;
+    for(var s=0; s<steps; s++){
+      var va = vAt(t), vb = vAt(t+0.5*dt), vd = vAt(t+dt);
+      var k1 = deriv(x, va);
+      var k2 = deriv(x + 0.5*dt*k1, vb);
+      var k3 = deriv(x + 0.5*dt*k2, vb);
+      var k4 = deriv(x + dt*k3, vd);
+      x = x + (dt/6)*(k1 + 2*k2 + 2*k3 + k4);
+      if(x<0)x=0; else if(x>1)x=1;
+
+      var M = Ron*x + Roff*(1-x);
+      var i = va / M;             // current at this instant (v = va)
+
+      if(s >= warm*N){
+        V.push(va); I.push(i);
+        var ai = Math.abs(i); if(ai>imax) imax = ai;
+      }
+      t += dt;
+    }
+
+    // signed loop area via shoelace, in V*A units
+    var area = 0;
+    for(var q=0; q<V.length; q++){
+      var j = (q+1) % V.length;
+      area += V[q]*I[j] - V[j]*I[q];
+    }
+    area = Math.abs(area) * 0.5;
+
+    var M0 = Ron*x + Roff*(1-x);
+    return {V:V, I:I, imax:imax, area:area, x:x, M:M0, period:period};
+  }
+
+  function line(x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col; ctx.lineWidth=w||1;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  }
+  function txt(s,x,y,col,size,align){
+    ctx.fillStyle=col; ctx.font=(size||12)+"px 'IBM Plex Mono',monospace";
+    ctx.textAlign=align||'left'; ctx.textBaseline='alphabetic';
+    ctx.fillText(s,x,y);
+  }
+
+  function draw(){
+    var A = parseFloat(sA.value),
+        f = parseFloat(sf.value),
+        ratio = parseFloat(sr.value);
+
+    oA.textContent = A.toFixed(2);
+    of_.textContent = f.toFixed(1);
+    or_.textContent = Math.round(ratio);
+
+    var sim = simulate(A, f, ratio);
+
+    // chip sync
+    var chips = document.querySelectorAll('#fchips .chip');
+    for(var ci=0; ci<chips.length; ci++){
+      var cf = parseFloat(chips[ci].getAttribute('data-f'));
+      chips[ci].classList.toggle('on', Math.abs(cf - f) < 0.001);
+    }
+
+    ctx.fillStyle = C.bg; ctx.fillRect(0,0,W,H);
+
+    var pad = 46;
+    var loopW = 560, loopH = H - 2*pad, loopX = pad, loopY = pad;
+    drawLoop(sim, A, loopX, loopY, loopW, loopH);
+
+    var rX = loopX + loopW + 54;
+    var rWd = W - rX - 26;
+    var traceH = 120, gap = 36;
+    drawTrace('v(t)  drive', sim.V, A, rX, loopY, rWd, traceH, C.copper);
+    drawTrace('i(t)  response', sim.I, (sim.imax*1.05) || 1e-12,
+              rX, loopY+traceH+gap, rWd, traceH, C.cyan);
+    drawStateBar(sim.x, rX, loopY+2*(traceH+gap)+8, rWd, 46);
+
+    rw.textContent = 'w = ' + sim.x.toFixed(3);
+    rm.textContent = sim.M.toFixed(0) + ' Ω';
+    rarea.textContent = sim.area.toExponential(2) + ' V·A';
+    rt.textContent = (sim.period*1000).toFixed(1) + ' ms';
+  }
+
+  function drawLoop(sim, A, X, Y, w, h){
+    var cx = X + w/2, cy = Y + h/2;
+    var imax = Math.max(sim.imax, 1e-15);
+    var sx = (w*0.5*0.86) / A;
+    var sy = (h*0.5*0.86) / imax;
+
+    ctx.strokeStyle = 'rgba(200,132,58,0.28)'; ctx.lineWidth=1;
+    ctx.strokeRect(X, Y, w, h);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(X,Y,w,h); ctx.clip();
+
+    for(var gv=-2.5; gv<=2.5; gv+=0.5){
+      line(cx + gv*sx, Y, cx + gv*sx, Y+h, C.grid, 1);
+    }
+    var half = h*0.5*0.86;
+    for(var r=1; r<=4; r++){
+      line(X, cy - r*half/4, X+w, cy - r*half/4, C.grid, 1);
+      line(X, cy + r*half/4, X+w, cy + r*half/4, C.grid, 1);
+    }
+    line(X, cy, X+w, cy, C.axis, 1.2);
+    line(cx, Y, cx, Y+h, C.axis, 1.2);
+
+    var V=sim.V, I=sim.I;
+    ctx.lineWidth = 2.2; ctx.lineJoin='round';
+    ctx.beginPath();
+    for(var q=0; q<V.length; q++){
+      var px = cx + V[q]*sx, py = cy - I[q]*sy;
+      if(q===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fillStyle='rgba(200,132,58,0.10)'; ctx.fill();
+    ctx.strokeStyle = C.copper; ctx.stroke();
+
+    // origin pinch marker
+    ctx.fillStyle = C.green;
+    ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, 2*Math.PI); ctx.fill();
+    ctx.strokeStyle='rgba(111,191,138,0.55)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(cx, cy, 9, 0, 2*Math.PI); ctx.stroke();
+    ctx.restore();
+
+    txt('i – v   PINCHED HYSTERESIS', X, Y-16, C.copper, 13);
+    txt('v (V) →', X+w-8, cy-8, C.dim, 11, 'right');
+    txt('↑ i (A)', cx+8, Y+16, C.dim, 11, 'left');
+    txt('pinch: i = 0 when v = 0', cx+14, cy+18, C.green, 11, 'left');
+  }
+
+  function drawTrace(label, arr, amax, X, Y, w, h, col){
+    var cy = Y + h/2;
+    ctx.strokeStyle='rgba(200,132,58,0.20)'; ctx.lineWidth=1;
+    ctx.strokeRect(X,Y,w,h);
+    line(X, cy, X+w, cy, 'rgba(236,227,213,0.25)', 1);
+    var n = arr.length;
+    var sy = (h*0.42)/(amax||1e-15);
+    ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.beginPath();
+    for(var q=0; q<n; q++){
+      var px = X + (q/(n-1))*w;
+      var py = cy - arr[q]*sy;
+      if(py<Y+1)py=Y+1; else if(py>Y+h-1)py=Y+h-1;
+      if(q===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    txt(label, X, Y-6, col, 12);
+    txt('one period', X+w-4, Y+h+13, C.dim, 10, 'right');
+  }
+
+  function drawStateBar(x, X, Y, w, h){
+    txt('state  w = x = doped fraction', X, Y-6, C.copper, 12);
+    ctx.strokeStyle='rgba(200,132,58,0.28)'; ctx.lineWidth=1;
+    ctx.strokeRect(X,Y,w,h);
+    var g = ctx.createLinearGradient(X,0,X+w,0);
+    g.addColorStop(0,'rgba(111,191,138,0.25)');
+    g.addColorStop(1,'rgba(107,176,192,0.10)');
+    ctx.fillStyle=g; ctx.fillRect(X+1,Y+1,w-2,h-2);
+    ctx.fillStyle=C.green; ctx.fillRect(X+1, Y+1, (w-2)*x, h-2);
+    var mx = X + (w-2)*x + 1;
+    line(mx, Y-2, mx, Y+h+2, C.ink, 2);
+    txt('R→R_on', X+6, Y+h-8, '#0c1810', 11);
+    txt('R→R_off', X+w-6, Y+h-8, C.dim, 11, 'right');
+    txt('x = '+x.toFixed(3), mx, Y+h+16, C.ink, 11, 'center');
+  }
+
+  // events — synchronous redraw
+  [sA, sf, sr].forEach(function(el){ el.addEventListener('input', draw); });
+  document.getElementById('fchips').addEventListener('click', function(e){
+    var b = e.target;
+    while(b && b !== this && !b.classList.contains('chip')) b = b.parentNode;
+    if(!b || !b.classList || !b.classList.contains('chip')) return;
+    sf.value = b.getAttribute('data-f');
+    draw();
+  });
+
+  // responsive backing store; logical coords stay W x H
+  function fit(){
+    var cssW = cv.clientWidth || W;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width  = Math.round(cssW * dpr);
+    cv.height = Math.round(cssW * (H/W) * dpr);
+    ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+    draw();
+  }
+  window.addEventListener('resize', fit);
+
+  // FIRST PAINT — synchronous, no rAF dependency
+  fit();
+})();
 </script>
 </body>
 </html>
